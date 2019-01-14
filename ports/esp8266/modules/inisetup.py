@@ -36,6 +36,10 @@ def setup():
     check_bootsec()
     print("Performing initial setup")
     wifi()
+    refs()
+
+def refs():
+    print("Remove and create FS")
     uos.VfsFat.mkfs(bdev)
     vfs = uos.VfsFat(bdev)
     uos.mount(vfs, '/')
