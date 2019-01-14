@@ -2,7 +2,7 @@ import esp
 
 class FlashBdev:
 
-    SEC_SIZE = 4096
+    SEC_SIZE = 1024 # PUYA P25Q80 have bug on the 512 page size
     RESERVED_SECS = 1
     START_SEC = esp.flash_user_start() // SEC_SIZE + RESERVED_SECS
     NUM_BLK = 0x6b - RESERVED_SECS
@@ -17,7 +17,7 @@ class FlashBdev:
     def writeblocks(self, n, buf):
         #print("writeblocks(%s, %x(%d))" % (n, id(buf), len(buf)))
         #assert len(buf) <= self.SEC_SIZE, len(buf)
-        esp.flash_erase(n + self.START_SEC)
+        #esp.flash_erase(n + self.START_SEC)
         esp.flash_write((n + self.START_SEC) * self.SEC_SIZE, buf)
 
     def ioctl(self, op, arg):
