@@ -47,8 +47,13 @@ def setup():
 import uos, machine
 uos.dupterm(machine.UART(0, 115200), 1)
 import gc
-#import webrepl
-#webrepl.start()
+import webrepl
+webrepl.start()
 gc.collect()
+import machine
+
+def toota():
+    machine.RTC().memory('yaotaota')
+    machine.reset()
 """)
     return vfs

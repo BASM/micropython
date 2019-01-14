@@ -4,6 +4,8 @@ import hashlib
 
 SEGS_MAX_SIZE = 0x9000
 
+print sys.argv
+print len(sys.argv)
 assert len(sys.argv) == 4
 
 md5 = hashlib.md5()

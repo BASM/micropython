@@ -17,7 +17,7 @@ FROZEN_MPY_DIR ?= modules
 include $(TOP)/py/py.mk
 
 FWBIN = $(BUILD)/firmware-combined.bin
-PORT ?= /dev/ttyACM0
+PORT ?= /dev/ttyUSB0
 BAUD ?= 115200
 FLASH_MODE ?= qio
 FLASH_SIZE ?= detect
@@ -195,6 +195,9 @@ $(BUILD)/firmware.elf: $(OBJ)
 ota:
 	rm -f $(BUILD)/firmware.elf $(BUILD)/firmware.elf*.bin
 	$(MAKE) LDSCRIPT=esp8266_ota.ld FWBIN=$(BUILD)/firmware-ota.bin
+	cd ../../../yaota8266/ota-client/ && ./ota.sh 
+
+
 
 include $(TOP)/py/mkrules.mk
 
