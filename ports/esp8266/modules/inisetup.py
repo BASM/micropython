@@ -36,7 +36,7 @@ def setup():
     check_bootsec()
     print("Performing initial setup")
     wifi()
-    refs()
+    #refs()
 
 def refs():
     print("Remove and create FS")
