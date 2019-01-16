@@ -41,6 +41,11 @@
 
 #define MODESP_INCLUDE_CONSTANTS (1)
 
+#define IRAM1_END (0x40108000)
+#define FLASH_START (0x40200000)
+#define FLASH_END (0x40300000)
+#define FLASH_SEC_SIZE (4096)
+
 void error_check(bool status, const char *msg) {
     if (!status) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, msg));
@@ -114,6 +119,46 @@ STATIC mp_obj_t esp_flash_read(mp_obj_t offset_in, mp_obj_t len_or_buf_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(esp_flash_read_obj, esp_flash_read);
 
+STATIC mp_obj_t esp_flash_write_block(mp_obj_t offset_in, const mp_obj_t buf_in) {
+		SpiFlashOpResult res;
+    mp_int_t offset = mp_obj_get_int(offset_in);
+		char     *tmpbuff=(void*)gc_alloc(FLASH_SEC_SIZE,false);
+
+    mp_int_t sector =offset/FLASH_SEC_SIZE;
+    mp_int_t idx    =offset%FLASH_SEC_SIZE;
+		mp_int_t offsec =sector*FLASH_SEC_SIZE;
+
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(buf_in, &bufinfo, MP_BUFFER_READ);
+    
+    printf("Read flash at (0x%x)...\n", offset);
+		res = spi_flash_read(offsec, (uint32_t*)tmpbuff, FLASH_SEC_SIZE);
+    if (res != SPI_FLASH_RESULT_OK) goto exitcode; 
+		printf("Read success\n");
+
+
+		printf("Erase block %x (%d)\n",sector,sector);
+		ets_loop_iter();
+		spi_flash_erase_sector(sector);
+    ets_loop_iter(); // flash access takes time so run any pending tasks
+
+		memcpy(tmpbuff+idx, bufinfo.buf, bufinfo.len);
+		
+		printf("Write to %d (offsec: %d, abs: %d)\n", offset, idx, offset+idx);
+    res = spi_flash_write(offsec, (uint32_t*)tmpbuff, FLASH_SEC_SIZE);
+    ets_loop_iter();
+    if (res == SPI_FLASH_RESULT_OK) {
+			goto exitcode;
+    }
+    mp_raise_OSError(res == SPI_FLASH_RESULT_TIMEOUT ? MP_ETIMEDOUT : MP_EIO);
+
+exitcode:
+		gc_free(tmpbuff);
+		return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(esp_flash_write_block_obj, esp_flash_write_block);
+
 STATIC mp_obj_t esp_flash_write(mp_obj_t offset_in, const mp_obj_t buf_in) {
     mp_int_t offset = mp_obj_get_int(offset_in);
     mp_buffer_info_t bufinfo;
@@ -129,6 +174,7 @@ STATIC mp_obj_t esp_flash_write(mp_obj_t offset_in, const mp_obj_t buf_in) {
     }
     mp_raise_OSError(res == SPI_FLASH_RESULT_TIMEOUT ? MP_ETIMEDOUT : MP_EIO);
 }
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(esp_flash_write_obj, esp_flash_write);
 
 STATIC mp_obj_t esp_flash_erase(mp_obj_t sector_in) {
@@ -242,6 +288,7 @@ STATIC mp_obj_t esp_free(mp_obj_t addr_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp_free_obj, esp_free);
 
+
 STATIC mp_obj_t esp_esf_free_bufs(mp_obj_t idx_in) {
     return MP_OBJ_NEW_SMALL_INT(ets_esf_free_bufs(mp_obj_get_int(idx_in)));
 }
@@ -258,11 +305,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(esp_esf_free_bufs_obj, esp_esf_free_bufs);
 // user can select iram1 or a section of flash by calling the
 // esp.set_native_code_location() function; see below.  If flash is selected
 // then it is erased as needed.
-
-#define IRAM1_END (0x40108000)
-#define FLASH_START (0x40200000)
-#define FLASH_END (0x40300000)
-#define FLASH_SEC_SIZE (4096)
 
 #define ESP_NATIVE_CODE_IRAM1 (0)
 #define ESP_NATIVE_CODE_FLASH (1)
@@ -352,6 +394,7 @@ STATIC const mp_rom_map_elem_t esp_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_flash_id), MP_ROM_PTR(&esp_flash_id_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_read), MP_ROM_PTR(&esp_flash_read_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_write), MP_ROM_PTR(&esp_flash_write_obj) },
+    { MP_ROM_QSTR(MP_QSTR_flash_write_block), MP_ROM_PTR(&esp_flash_write_block_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_erase), MP_ROM_PTR(&esp_flash_erase_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_size), MP_ROM_PTR(&esp_flash_size_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_user_start), MP_ROM_PTR(&esp_flash_user_start_obj) },
