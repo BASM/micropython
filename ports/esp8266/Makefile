@@ -195,7 +195,8 @@ $(BUILD)/firmware.elf: $(OBJ)
 ota:
 	rm -f $(BUILD)/firmware.elf $(BUILD)/firmware.elf*.bin
 	$(MAKE) LDSCRIPT=esp8266_ota.ld FWBIN=$(BUILD)/firmware-ota.bin
-	cd ../../../yaota8266/ota-client/ && ./ota.sh 
+	#cd ../../../yaota8266/ota-client/ && ./ota.sh 
+	#esptool.py write_flash 0x3c000 build/firmware-ota.bin
 
 
 
