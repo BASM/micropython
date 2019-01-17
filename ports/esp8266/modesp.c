@@ -124,7 +124,10 @@ STATIC mp_obj_t esp_flash_write_block(mp_obj_t offset_in, const mp_obj_t buf_in)
     mp_int_t offset = mp_obj_get_int(offset_in);
 		// TODO maybe best alloc the memory once
 		char     *tmpbuff;
-
+    
+		mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(buf_in, &bufinfo, MP_BUFFER_READ);
+    
     if (bufinfo.len > FLASH_SEC_SIZE) 
         mp_raise_ValueError("len must be from 1 to FLASH_SEC_SIZE (4096)");
 		
@@ -135,9 +138,6 @@ STATIC mp_obj_t esp_flash_write_block(mp_obj_t offset_in, const mp_obj_t buf_in)
     mp_int_t sector =offset/FLASH_SEC_SIZE;
     mp_int_t idx    =offset%FLASH_SEC_SIZE;
 		mp_int_t offsec =sector*FLASH_SEC_SIZE;
-
-    mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(buf_in, &bufinfo, MP_BUFFER_READ);
     
 		res = spi_flash_read(offsec, (uint32_t*)tmpbuff, FLASH_SEC_SIZE);
     if (res != SPI_FLASH_RESULT_OK) goto exitcode; 
