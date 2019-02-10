@@ -15,11 +15,14 @@ class FlashBdev:
         esp.flash_read((n + self.START_SEC) * self.SEC_SIZE, buf)
 
     def writeblocks(self, n, buf):
+        if (len(buf)>4096):
+            print("FATAL!!! BLOCK SIZE IS %d"%len(buf))
         #print("writeblocks(%s, %x(%d))" % (n, id(buf), len(buf)))
         #assert len(buf) <= self.SEC_SIZE, len(buf)
         #esp.flash_erase(n + self.START_SEC)
         # FIXME if not PUYA flash_write without _block
-        # PUYA P25Q80 have bug on the 512 page size
+        # PUYA P25Q80 do not erase when write, you need erase by sec(256 and more)
+        #             esp-sdk don't supported any size exept 4096
         esp.flash_write_block((n + self.START_SEC) * self.SEC_SIZE, buf)
 
     def ioctl(self, op, arg):
